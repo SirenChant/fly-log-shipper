@@ -1,19 +1,25 @@
-# fly.toml app configuration file generated for fly-log-shipper-jupptest on 2023-05-03T15:24:21Z
+# fly.toml app configuration file generated for fly-log-shipper-jupptest on 2023-05-04T17:38:24Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = "fly-log-shipper-jupptest"
 primary_region = "ams"
+kill_signal = "SIGINT"
+kill_timeout = 5
 
-[build]
-  image = "ghcr.io/superfly/fly-log-shipper:latest"
-
-[metrics]
-  path = "/metrics"
-  port = 9598
+[env]
+  PRIMARY_REGION = "ams"
 
 [[services]]
-  http_checks = []
+  protocol = "tcp"
   internal_port = 8686
+  ports = []
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
 
+[metrics]
+  port = 9598
+  path = "/metrics"

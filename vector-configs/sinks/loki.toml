@@ -3,6 +3,7 @@
   inputs = ["log_json"]
   source = '''
   .level = .log.level
+  del(.log)
   if starts_with(.message, "{") ?? false {
     # parse json messages
     json = object!(parse_json!(.message))
@@ -11,9 +12,18 @@
   }
   '''
 
+
+
+[transforms.test]
+  type = "remap"
+  inputs = ["loki_json"]
+  source = '''
+    .level = .log_level
+  '''
+
 [sinks.loki]
   type = "loki"
-  inputs = ["loki_json"]
+  inputs = ["test"]
   endpoint = "${LOKI_URL}"
   compression = "gzip"
   auth.strategy = "basic"
