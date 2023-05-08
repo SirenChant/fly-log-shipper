@@ -4,7 +4,7 @@
   source = '''
   .level = .log.level
   del(.log)
-  if starts_with(.message, "{") ?? false {
+  if (starts_with(.message, "{") && ends_with(.message, "}")) ?? false {
     # parse json messages
     json = object!(parse_json!(.message))
     del(.message)
@@ -12,18 +12,29 @@
   }
   '''
 
-
-
-[transforms.test]
-  type = "remap"
+[transforms.elixir_log]
+  type = "filter"
   inputs = ["loki_json"]
+  condition = 'exists(.log_level)'
+
+[transforms.not_elixir_log]
+  type = "filter"
+  inputs = ["loki_json"]
+  condition = '!exists(.log_level)'  
+
+[transforms.trans_elixir_log]
+  type = "remap"
+  inputs = ["elixir_log"]
   source = '''
-    .level = .log_level
+  .level = .log_level
+  del(.log_level)
+  .event.provider = "service"
   '''
 
 [sinks.loki]
   type = "loki"
-  inputs = ["test"]
+  inputs = ["trans_elixir_log", "not_elixir_log"]
+  #inputs = ["loki_json"]
   endpoint = "${LOKI_URL}"
   compression = "gzip"
   auth.strategy = "basic"
