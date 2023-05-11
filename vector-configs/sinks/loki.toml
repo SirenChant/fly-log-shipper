@@ -33,8 +33,7 @@
 
 [sinks.loki]
   type = "loki"
-  inputs = ["trans_elixir_log", "not_elixir_log"]
-  #inputs = ["loki_json"]
+  inputs = ["trans_elixir_log", "not_elixir_log"]  
   endpoint = "${LOKI_URL}"
   compression = "gzip"
   auth.strategy = "basic"
@@ -49,3 +48,81 @@
   labels.host = "{{host}}"
   labels.level = "{{level}}"
 
+[[tests]]
+  name = "Test log chain for elxir service log events"
+  no_outputs_from =["not_elixir_log"]
+
+[[tests.inputs]]
+  insert_at = "log_json"    
+  type = "log"  
+
+[tests.inputs.log_fields]    
+message = '''
+{
+  "event": {
+    "provider": "app"
+  },
+  "fly": {
+    "app": {
+      "instance": "1234567a",
+      "name": "myelxirtest"
+    },
+    "region": "ams"
+  },
+  "host": "a1b2",
+  "level": "info",
+  "log_level" : "info",
+  "message": "GET / -> 200",
+  "metadata" : {
+     "span_id": "db2cc9dca234336f",
+     "trace_id": "21de036b7058c9424872dfe58c61ebe8",
+     "request_id": "F1w7k0hTewJxon0AAABi" 
+  }
+}
+'''
+
+[[tests.outputs]]
+  extract_from = "trans_elixir_log"
+
+[[tests.outputs.conditions]]
+  type = "vrl"
+  source = '''    
+  assert!(!exists(.log_level))
+  assert_eq!(.level, "info", "incorrect log level")
+  assert_eq!(.event.provider, "service", "incorrect service")
+  assert_eq!(.fly.app.instance, "1234567a", "incorrect instance")
+  assert_eq!(.fly.app.name, "myelxirtest", "incorrect name")
+  assert_eq!(.fly.region, "ams", "incorrect region")
+  assert_eq!(.host, "a1b2", "incorrect host")
+  assert_eq!(.message, "GET / -> 200", "incorrect message")
+  assert_eq!(.metadata.request_id, "F1w7k0hTewJxon0AAABi", "incorrect requst id")
+  assert_eq!(.metadata.span_id, "db2cc9dca234336f", "incorrect span id")
+  assert_eq!(.metadata.trace_id, "21de036b7058c9424872dfe58c61ebe8", "incorrect trace id")
+  '''
+
+[[tests]]
+  name = "Test log chain for fly specifc log events"
+  no_outputs_from = ["trans_elixir_log", "elixir_log"]
+
+[[tests.inputs]]
+  insert_at = "log_json"    
+  type = "log"  
+
+[tests.inputs.log_fields]    
+message = '''
+{
+  "event": {
+    "provider": "app"
+  },
+  "fly": {
+    "app": {
+      "instance": "1234567a",
+      "name": "myelxirtest"
+    },
+    "region": "ams"
+  },
+  "host": "a1b2",
+  "level": "info",
+  "message": "undefined"
+}
+'''
