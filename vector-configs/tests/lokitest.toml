@@ -1,5 +1,5 @@
 [[tests]]
-  name = "Test log chain for elxir service log events"
+  name = "elixir log event from 'log_json' to 'trans_elixir_log' (SUT:vector.toml, loki.toml)[PROD]"
   no_outputs_from =["not_elixir_log"]
 
 [[tests.inputs]]
@@ -51,7 +51,7 @@ message = '''
   '''
 
 [[tests]]
-  name = "Test log chain for fly specifc log events"
+  name = "non elixir log event from 'log_json' (SUT:vector.toml, loki.toml)[PROD]"
   no_outputs_from = ["trans_elixir_log", "elixir_log"]
 
 [[tests.inputs]]
